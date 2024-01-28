@@ -25,3 +25,4 @@ def deleteUser(event, context):
     }
 
     return response
+    
