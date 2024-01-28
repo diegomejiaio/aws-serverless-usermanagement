@@ -1,0 +1,24 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build artifacts
+dist/
+build/
+
+# Ignore serverless deployment artifacts
+.serverless/
+
+# Ignore environment variables file
+.env
+
+# Ignore AWS credentials file
+.aws/credentials
+
+# Ignore AWS configuration file
+.aws/config
+
+# Ignore local development files
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
