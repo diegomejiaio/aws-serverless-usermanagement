@@ -132,11 +132,11 @@ custom:
 
 layers:
   base:
-    name: "dev-dependencies"
+    name: "prd-dependencies"
     compatibleRuntimes:
       - "nodejs14.x"
     package:
-      artifact: app/nodejs.zip
+      artifact: apps/nodejs.zip
 
 resources:
   Resources:
