@@ -12,34 +12,73 @@ provider:
             - 'dynamodb:Query'
             - 'dynamodb:*'
           Resource: arn:aws:dynamodb:us-east-2:226175033599:table/usersTable
+        - Effect: Allow
+          Action:
+            - 's3:PutObject'
+            - 's3:GetObject'
+            - 's3:ListBucket'
+          Resource: arn:aws:s3:::users-bucket-just-for-testing/*
+  environment:
+    BUCKET: users-bucket-just-for-testing
+
 
 functions:
   getUser:
     handler: getUser/handler.getUser
+    package:
+      patterns:
+        - "getuser/handler.js"
     events:
       - http:
           path: users/{id}
           method: GET
+          request:
+            parameters:
+              paths:
+                id: true
   createUser:
     handler: createUser/handler.createUser
+    package:
+      patterns:
+        - "createUser/handler.js"
     events:
       - http:
           path: users
           method: POST
+          request:
+            schemas:
+              application/json: ${file(schemas/user-schema.json)}
+
   updateUser:
     handler: updateUser/handler.updateUser
+    package:
+      patterns:
+        - "updateUser/handler.js"
     events:
       - http:
           path: users/{id}
           method: PATCH
+          request:
+            parameters:
+              paths:
+                id: true
+            schemas:
+              application/json: ${file(schemas/user-schema.json)}
   getUsers:
     handler: getUsers/handler.getUsers
+    package:
+      patterns:
+        - "updateUsers/handler.js"
     events:
       - http:
           path: users
           method: GET
+
   deleteUser:
     handler: deleteUser/handler.deleteUser
+    package:
+      patterns:
+        - "deleteUser/handler.py"
     runtime: python3.8
     events:
       - http:
@@ -49,10 +88,38 @@ functions:
             parameters:
               paths:
                 id: true
+  signedS3URL:
+    handler: signedS3URL/handler.signedS3URL
+    package:
+      patterns:
+        - "signedS3URL/handler.js"
+    events:
+      - http:
+          path: signedurl
+          method: GET
+          request:
+            parameters:
+              querystrings:
+                filename: true
+  thumbnailGenerator:
+    handler: thumbnailGenerator/handler.thumbnailGenerator
+    layers:
+      - { Ref: BaseLambdaLayer }
+    package:
+      patterns:
+        - "thumbnailGenerator/handler.js"
+        - "node_modules/**"
+    events:
+      - s3:
+          bucket: users-bucket-just-for-testing
+          event: s3:ObjectCreated:*
+          existing: true
+          rules:
+            - prefix: upload/
 
-plugins:
-  - serverless-offline
-  - serverless-dynamodb
+# plugins:
+#   - serverless-offline
+#   - serverless-dynamodb
 
 custom:
   serverless-dynamodb:
@@ -62,6 +129,14 @@ custom:
     docker: false
     start:
       migrate: true
+
+layers:
+  base:
+    name: "prd-dependencies"
+    compatibleRuntimes:
+      - "nodejs14.x"
+    package:
+      artifact: apps/nodejs.zip
 
 resources:
   Resources:
@@ -78,9 +153,36 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: users-bucket-just-for-testing
+        OwnershipControls:
+          Rules:
+            - ObjectOwnership: ObjectWriter
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+    SampleBucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket: !Ref S3Bucket
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Action:
+                - 's3:GetObject'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref S3Bucket
+                  - /*
+              Principal: '*'
 
 package: 
   individually: true
   patterns:
-    - "!.dynamodb"
-    - "!node_modules"
+    - "!*/**"
+    - "!nodejs*"
+    - "!*.zip"
