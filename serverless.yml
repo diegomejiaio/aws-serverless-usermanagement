@@ -4,6 +4,9 @@ provider:
   name: aws
   runtime: nodejs14.x
   region: us-east-2
+  apiGateway:
+    apiKeys:
+      - crud-serverless-users-apikey
   iam:
     role:
       statements:
@@ -71,6 +74,7 @@ functions:
         - "updateUsers/handler.js"
     events:
       - http:
+          private: true
           path: users
           method: GET
 
