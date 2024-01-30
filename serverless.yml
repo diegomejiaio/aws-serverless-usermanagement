@@ -101,10 +101,25 @@ functions:
             parameters:
               querystrings:
                 filename: true
+  thumbnailGenerator:
+    handler: thumbnailGenerator/handler.thumbnailGenerator
+    layers:
+      - { Ref: BaseLambdaLayer }
+    package:
+      patterns:
+        - "thumbnailGenerator/handler.js"
+        - "node_modules/**"
+    events:
+      - s3:
+          bucket: users-bucket-just-for-testing
+          event: s3:ObjectCreated:*
+          existing: true
+          rules:
+            - prefix: upload/
 
-plugins:
-  - serverless-offline
-  - serverless-dynamodb
+# plugins:
+#   - serverless-offline
+#   - serverless-dynamodb
 
 custom:
   serverless-dynamodb:
@@ -114,6 +129,14 @@ custom:
     docker: false
     start:
       migrate: true
+
+layers:
+  base:
+    name: "dev-dependencies"
+    compatibleRuntimes:
+      - "nodejs14.x"
+    package:
+      artifact: nodejs.zip
 
 resources:
   Resources:
@@ -160,5 +183,6 @@ resources:
 package: 
   individually: true
   patterns:
-    - "!.dynamodb"
-    - "!node_modules"
+    - "!*/**"
+    - "!nodejs*"
+    - "!*.zip"
