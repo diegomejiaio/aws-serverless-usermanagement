@@ -71,7 +71,7 @@ functions:
     handler: getUsers/handler.getUsers
     package:
       patterns:
-        - "updateUsers/handler.js"
+        - "getUsers/handler.js"
     events:
       - http:
           private: true
